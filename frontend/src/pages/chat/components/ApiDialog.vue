@@ -213,7 +213,10 @@ const validateAllApiKeys = async () => {
       validationResults.value[key] = { valid: false, message: 'Checking...' }
       validationResults.value[key] = await validateModelApiKey(form.value[formKey] as any)
       
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // 增加延迟，避免触发 QPS 限制
+      if (config.key !== modelConfigs.value[modelConfigs.value.length - 1].key) {
+         await new Promise(resolve => setTimeout(resolve, 1500))
+      }
     }
   } finally {
     validating.value = false

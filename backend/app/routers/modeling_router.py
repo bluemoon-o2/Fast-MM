@@ -55,6 +55,39 @@ class SaveApiConfigRequest(BaseModel):
     openalex_email: str
 
 
+def _get_model_with_provider(model: str, provider: str, base_url: str) -> str:
+    """
+    根据 provider 和 base_url 处理 model 名称，加上相应的前缀
+    """
+    if not model:
+        return model
+        
+    # 1. Ollama 特殊处理
+    if provider == "ollama":
+        if not model.startswith("ollama/"):
+            return f"ollama/{model}"
+    
+    # 2. 如果提供了自定义 Base URL (且不是 OpenAI 官方)，通常是 OpenAI 兼容接口
+    # 包括 DashScope Compatible, DeepSeek, SiliconFlow, LocalAI 等
+    # Anthropic 和 Azure 有自己的协议，不强制转为 openai/
+    elif (
+        base_url 
+        and base_url.strip() 
+        and "api.openai.com" not in base_url
+        and provider not in ["anthropic", "azure", "gemini", "vertex_ai"]
+    ):
+        # 强制使用 openai/ 前缀以走 OpenAI 兼容协议
+        if not model.startswith("openai/"):
+            return f"openai/{model}"
+            
+    # 3. 其他情况，如果指定了 Provider 且不是 openai/custom，尝试加上前缀
+    # 例如 dashscope/qwen-turbo (走原生 SDK)
+    elif provider and provider not in ["openai", "custom"] and "/" not in model:
+        return f"{provider}/{model}"
+        
+    return model
+
+
 @router.post("/save-api-config")
 async def save_api_config(request: SaveApiConfigRequest):
     """
@@ -64,23 +97,44 @@ async def save_api_config(request: SaveApiConfigRequest):
         # 更新各个模块的设置
         if request.coordinator:
             settings.COORDINATOR_API_KEY = request.coordinator.get("apiKey", "")
-            settings.COORDINATOR_MODEL = request.coordinator.get("modelId", "")
-            settings.COORDINATOR_BASE_URL = request.coordinator.get("baseUrl", "")
+            
+            # 处理 model 名称
+            provider = request.coordinator.get("provider", "openai")
+            base_url = request.coordinator.get("baseUrl", "")
+            raw_model = request.coordinator.get("modelId", "")
+            
+            settings.COORDINATOR_MODEL = _get_model_with_provider(raw_model, provider, base_url)
+            settings.COORDINATOR_BASE_URL = base_url
 
         if request.modeler:
             settings.MODELER_API_KEY = request.modeler.get("apiKey", "")
-            settings.MODELER_MODEL = request.modeler.get("modelId", "")
-            settings.MODELER_BASE_URL = request.modeler.get("baseUrl", "")
+            
+            provider = request.modeler.get("provider", "openai")
+            base_url = request.modeler.get("baseUrl", "")
+            raw_model = request.modeler.get("modelId", "")
+            
+            settings.MODELER_MODEL = _get_model_with_provider(raw_model, provider, base_url)
+            settings.MODELER_BASE_URL = base_url
 
         if request.coder:
             settings.CODER_API_KEY = request.coder.get("apiKey", "")
-            settings.CODER_MODEL = request.coder.get("modelId", "")
-            settings.CODER_BASE_URL = request.coder.get("baseUrl", "")
+            
+            provider = request.coder.get("provider", "openai")
+            base_url = request.coder.get("baseUrl", "")
+            raw_model = request.coder.get("modelId", "")
+            
+            settings.CODER_MODEL = _get_model_with_provider(raw_model, provider, base_url)
+            settings.CODER_BASE_URL = base_url
 
         if request.writer:
             settings.WRITER_API_KEY = request.writer.get("apiKey", "")
-            settings.WRITER_MODEL = request.writer.get("modelId", "")
-            settings.WRITER_BASE_URL = request.writer.get("baseUrl", "")
+            
+            provider = request.writer.get("provider", "openai")
+            base_url = request.writer.get("baseUrl", "")
+            raw_model = request.writer.get("modelId", "")
+            
+            settings.WRITER_MODEL = _get_model_with_provider(raw_model, provider, base_url)
+            settings.WRITER_BASE_URL = base_url
 
         if request.openalex_email:
             settings.OPENALEX_EMAIL = request.openalex_email
@@ -97,31 +151,11 @@ async def validate_api_key(request: ValidateApiKeyRequest):
     验证 API Key 的有效性
     """
     try:
-        model = request.model_id
-        
-        # 智能判断 Provider 前缀
-        # 1. Ollama 特殊处理
-        if request.provider == "ollama":
-            if not model.startswith("ollama/"):
-                model = f"ollama/{model}"
-        
-        # 2. 如果提供了自定义 Base URL (且不是 OpenAI 官方)，通常是 OpenAI 兼容接口
-        # 包括 DashScope Compatible, DeepSeek, SiliconFlow, LocalAI 等
-        # Anthropic 和 Azure 有自己的协议，不强制转为 openai/
-        elif (
-            request.base_url 
-            and request.base_url.strip() 
-            and "api.openai.com" not in request.base_url
-            and request.provider not in ["anthropic", "azure", "gemini", "vertex_ai"]
-        ):
-            # 强制使用 openai/ 前缀以走 OpenAI 兼容协议
-            if not model.startswith("openai/"):
-                model = f"openai/{model}"
-                
-        # 3. 其他情况，如果指定了 Provider 且不是 openai/custom，尝试加上前缀
-        # 例如 dashscope/qwen-turbo (走原生 SDK)
-        elif request.provider and request.provider not in ["openai", "custom"] and "/" not in model:
-            model = f"{request.provider}/{model}"
+        model = _get_model_with_provider(
+            request.model_id, 
+            request.provider, 
+            request.base_url
+        )
 
         # 使用 litellm 发送测试请求
         await litellm.acompletion(
@@ -146,8 +180,31 @@ async def validate_api_key(request: ValidateApiKeyRequest):
                 valid=False, message="✗ 模型 ID 不存在或 Base URL 错误"
             )
         elif "429" in error_msg or "rate limit" in error_msg.lower() or "ratelimit" in error_msg.lower() or "quota" in error_msg.lower():
+            # 尝试提取更具体的错误信息
+            detail = error_msg
+            
+            # 清洗 litellm 常见的前缀
+            prefixes_to_remove = [
+                "litellm.RateLimitError: RateLimitError: OpenAIException - ",
+                "litellm.RateLimitError: RateLimitError: ",
+                "litellm.RateLimitError: ",
+                "Error code: 429 - ",
+            ]
+            for prefix in prefixes_to_remove:
+                if prefix in detail:
+                    detail = detail.replace(prefix, "")
+            
+            if "message" in error_msg:
+                # 简单的尝试提取 JSON 格式中的 message
+                import re
+                match = re.search(r"'message':\s*'([^']*)'", error_msg)
+                if match:
+                    detail = match.group(1)
+            
+            # 截断过长的错误信息
+            display_msg = detail[:100] + "..." if len(detail) > 100 else detail
             return ValidateApiKeyResponse(
-                valid=False, message="✗ 请求过于频繁或额度不足(Rate Limit/Quota)"
+                valid=False, message=f"✗ 限流或额度不足: {display_msg}"
             )
         elif "403" in error_msg or "Forbidden" in error_msg:
             return ValidateApiKeyResponse(
