@@ -9,6 +9,30 @@
 
 <h5 align="center"><a href="README.md">简体中文</a> | English</h5>
 
+<p align="center">
+    <a href="https://github.com/bluemoon-o2/Fast-MM" target="_blank">
+        <img src="https://img.shields.io/github/stars/bluemoon-o2/Fast-MM?style=for-the-badge&color=brightgreen&logo=github" alt="GitHub Stars">
+    </a>
+    <a href="https://github.com/bluemoon-o2/Fast-MM/blob/main/LICENSE" target="_blank">
+        <img src="https://img.shields.io/github/license/bluemoon-o2/Fast-MM?style=for-the-badge&color=orange" alt="License">
+    </a>
+    <a href="https://docker.com/" target="_blank">
+        <img src="https://img.shields.io/badge/Docker-Supported-blue?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Supported">
+    </a>
+    <a href="https://python.org/" target="_blank">
+        <img src="https://img.shields.io/badge/Python-3.10+-purple?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+">
+    </a>
+    <a href="https://vuejs.org/" target="_blank">
+        <img src="https://img.shields.io/badge/Vue-3-green?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
+    </a>
+    <a href="https://fastapi.tiangolo.com/" target="_blank">
+        <img src="https://img.shields.io/badge/FastAPI-Async-yellow?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI Async">
+    </a>
+    <a href="https://github.com/bluemoon-o2/Fast-MM/pulls" target="_blank">
+        <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge" alt="PRs Welcome">
+    </a>
+</p>
+
 ## 🌟 Project Overview
 
 **Fast-MM** is an automated assistance system designed specifically for mathematical modeling competitions. It automates the entire process from problem analysis and model construction to code solution and paper writing, helping teams efficiently produce high-quality competition submissions.
@@ -41,6 +65,13 @@ It adopts modern engineering architecture (FastAPI + Vue3 + Redis + WebSocket) a
     - Visualized task execution flow.
 
 ## 🏗️ Architecture
+
+<p align="left">
+    <img src="https://img.shields.io/badge/TailwindCSS-3.0+-teal?style=flat&logo=tailwindcss&logoColor=white" alt="TailwindCSS">
+    <img src="https://img.shields.io/badge/Redis-Task%20Queue-red?style=flat&logo=redis&logoColor=white" alt="Redis">
+    <img src="https://img.shields.io/badge/Jupyter-Kernel-orange?style=flat&logo=jupyter&logoColor=white" alt="Jupyter Kernel">
+    <img src="https://img.shields.io/badge/WebSocket-Real%20Time-pink?style=flat&logo=websocket&logoColor=white" alt="WebSocket">
+</p>
 
 - **Frontend**: Vue 3 + TailwindCSS + WebSocket
 - **Backend**: FastAPI (Async) + Redis (Task Queue)
