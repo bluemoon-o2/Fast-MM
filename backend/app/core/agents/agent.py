@@ -1,6 +1,7 @@
 from app.core.llm.llm import LLM, simple_chat
 from app.utils.log_util import logger
 from icecream import ic
+from app.core.prompts import MEMORY_COMPRESSION_PROMPT
 
 # TODO: Memory 的管理
 # TODO: 评估任务完成情况，rethinking
@@ -105,7 +106,7 @@ class Agent:
                 summarize_history.append(
                     {
                         "role": "user",
-                        "content": f"请简洁总结以下对话的关键内容和重要结论，保留重要的上下文信息：\n\n{self._format_history_for_summary(self.chat_history[start_idx:end_idx])}",
+                        "content": f"{MEMORY_COMPRESSION_PROMPT}\n\n需要总结的对话历史：\n{self._format_history_for_summary(self.chat_history[start_idx:end_idx])}",
                     }
                 )
 

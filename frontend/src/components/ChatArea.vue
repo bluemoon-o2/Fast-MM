@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Bubble from './Bubble.vue'
 import SystemMessage from './SystemMessage.vue'
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Send } from 'lucide-vue-next'
@@ -12,6 +12,15 @@ const props = defineProps<{ messages: Message[] }>()
 const inputValue = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 const scrollRef = ref<HTMLDivElement | null>(null)
+
+// 监听消息变化，自动滚动到底部
+watch(() => props.messages, () => {
+  nextTick(() => {
+    if (scrollRef.value) {
+      scrollRef.value.scrollTop = scrollRef.value.scrollHeight
+    }
+  })
+}, { deep: true, immediate: true })
 
 const sendMessage = () => {
   // 这里只处理本地 user 消息输入，如需和后端交互请在父组件处理
@@ -50,18 +59,23 @@ const sendMessage = () => {
 <style scoped>
 /* 自定义滚动条样式 */
 .overflow-y-auto::-webkit-scrollbar {
-  width: 4px;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background-color: transparent;
+  border-radius: 9999px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+  background-color: rgba(107, 114, 128, 0.8);
 }
 </style>

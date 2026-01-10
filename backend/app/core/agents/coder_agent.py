@@ -10,7 +10,8 @@ from app.core.prompts import CODER_PROMPT
 from app.utils.common_utils import get_current_files
 import json
 from app.core.prompts import get_reflection_prompt
-from app.core.functions import coder_tools
+from app.core.tools.registry import tool_registry
+from app.core.tools.implementations.code_execution import CodeExecutionTool
 
 # TODO: 时间等待过久，stop 进程
 # TODO: 支持 cuda
@@ -34,6 +35,10 @@ class CoderAgent(Agent):  # 同样继承自Agent类
         self.is_first_run = True
         self.system_prompt = CODER_PROMPT
         self.code_interpreter = code_interpreter
+        
+        # 注册工具
+        if self.code_interpreter:
+             tool_registry.register(CodeExecutionTool(self.code_interpreter))
 
     async def run(self, prompt: str, subtask_title: str) -> CoderToWriter:
         logger.info(f"{self.__class__.__name__}:开始:执行子任务: {subtask_title}")
@@ -88,9 +93,12 @@ class CoderAgent(Agent):  # 同样继承自Agent类
             logger.info(f"当前对话轮次: {self.current_chat_turns}")
             
             try:
+                # 获取注册的工具
+                tools = tool_registry.get_openai_tools()
+                
                 response = await self.model.chat(
                     history=self.chat_history,
-                    tools=coder_tools,
+                    tools=tools,
                     tool_choice="auto",
                     agent_name=self.__class__.__name__,
                 )
@@ -113,7 +121,8 @@ class CoderAgent(Agent):  # 同样继承自Agent类
                             ),
                         )
 
-                        code = json.loads(tool_call.function.arguments)["code"]
+                        args = json.loads(tool_call.function.arguments)
+                        code = args.get("code")
 
                         await redis_manager.publish_message(
                             self.task_id,
@@ -130,11 +139,13 @@ class CoderAgent(Agent):  # 同样继承自Agent类
 
                         # 执行工具调用
                         logger.info("执行工具调用")
-                        (
-                            text_to_gpt,
-                            error_occurred,
-                            error_message,
-                        ) = await self.code_interpreter.execute_code(code)
+                        
+                        # 使用 ToolRegistry 执行
+                        result = await tool_registry.execute_tool("execute_code", {"code": code})
+                        
+                        text_to_gpt = result["content"]
+                        error_occurred = result["is_error"]
+                        error_message = result["content"] if result["is_error"] else ""
 
                         # 添加工具执行结果
                         if error_occurred:

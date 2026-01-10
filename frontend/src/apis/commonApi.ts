@@ -42,3 +42,8 @@ export function getServiceStatus() {
 		redis: { status: string; message: string };
 	}>("/status");
 }
+
+// 获取任务历史
+export function getTaskHistory(task_id: string) {
+	return request.get<any[]>(`/history/${task_id}`);
+}

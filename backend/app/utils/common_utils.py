@@ -7,7 +7,6 @@ from app.utils.log_util import logger
 import re
 import pypandoc
 from app.config.setting import settings
-from icecream import ic
 
 
 def create_task_id() -> str:
@@ -19,15 +18,11 @@ def create_task_id() -> str:
 
 
 def create_work_dir(task_id: str) -> str:
-    # 设置主工作目录和子目录
     work_dir = os.path.join("project", "work_dir", task_id)
-
     try:
-        # 创建目录，如果目录已存在也不会报错
         os.makedirs(work_dir, exist_ok=True)
         return work_dir
     except Exception as e:
-        # 捕获并记录创建目录时的异常
         logger.error(f"创建工作目录失败: {str(e)}")
         raise
 

@@ -77,9 +77,31 @@ const updateDuration = () => {
 console.log('Task ID:', props.task_id)
 
 onMounted(async () => {
+  // 1. 获取历史消息
+  await taskStore.fetchHistory(props.task_id)
+  
+  // 2. 连接 WebSocket
   taskStore.connectWebSocket(props.task_id)
+  
+  // 3. 获取其他信息
   const res = await getWriterSeque();
   writerSequence.value = Array.isArray(res.data) ? res.data : [];
+
+  // 4. 恢复计时器
+  if (taskStore.messages.length > 0) {
+    // 尝试找到最早的消息时间作为开始时间
+    // 这里假设后端Message如果有timestamp字段最好，如果没有则只能用当前时间
+    // 我们刚才在后端加了 timestamp 字段
+    const firstMsg = taskStore.messages[0]
+    if ('timestamp' in firstMsg && typeof firstMsg.timestamp === 'number') {
+      startTime.value = firstMsg.timestamp * 1000 // 转换为毫秒
+    } else {
+       // 如果没有时间戳，就默认当前时间（或者不准确）
+       startTime.value = Date.now()
+    }
+  } else {
+     startTime.value = Date.now()
+  }
 
   // 开始计时
   timer = setInterval(updateDuration, 1000)

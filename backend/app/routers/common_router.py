@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+import json
+from fastapi import APIRouter, HTTPException
 from app.config.setting import settings
 from app.utils.common_utils import get_config_template
 from app.schemas.enums import CompTemplate
@@ -11,6 +12,24 @@ router = APIRouter()
 @router.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@router.get("/history/{task_id}")
+async def get_task_history(task_id: str):
+    """获取任务历史消息"""
+    try:
+        messages_dir = redis_manager.messages_dir
+        file_path = messages_dir / f"{task_id}.json"
+        
+        if not file_path.exists():
+            return []
+            
+        with open(file_path, "r", encoding="utf-8") as f:
+            messages = json.load(f)
+            return messages
+    except Exception as e:
+        logger.error(f"获取任务历史失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取任务历史失败: {str(e)}")
 
 
 @router.get("/config")

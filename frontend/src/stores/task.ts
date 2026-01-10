@@ -133,6 +133,22 @@ export const useTaskStore = defineStore('task', () => {
   // 初始化连接
   // 如果需要自动连接，可以在这里添加代码
   // 例如：connectWebSocket('default')
+  
+  // 获取历史消息
+  async function fetchHistory(taskId: string) {
+    try {
+      // 动态导入以避免循环依赖（如果存在）
+      const { getTaskHistory } = await import('@/apis/commonApi')
+      const res = await getTaskHistory(taskId)
+      if (res.data && Array.isArray(res.data)) {
+        messages.value = res.data
+        return res.data
+      }
+    } catch (error) {
+      console.error('获取历史消息失败:', error)
+    }
+    return []
+  }
 
   return {
     messages,
@@ -146,6 +162,7 @@ export const useTaskStore = defineStore('task', () => {
     connectWebSocket,
     closeWebSocket,
     downloadMessages,
-    addUserMessage
+    addUserMessage,
+    fetchHistory
   }
 }) 

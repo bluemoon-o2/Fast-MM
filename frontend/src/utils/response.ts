@@ -9,6 +9,7 @@ export interface BaseMessage {
   id: string;
   msg_type: 'system' | 'agent' | 'user' | 'tool';
   content?: string | null;
+  timestamp?: number;
 }
 
 export interface ToolMessage extends BaseMessage {

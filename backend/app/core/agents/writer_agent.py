@@ -7,7 +7,8 @@ from app.utils.log_util import logger
 from app.services.redis_manager import redis_manager
 from app.schemas.response import SystemMessage, WriterMessage
 import json
-from app.core.functions import writer_tools
+from app.core.tools.registry import tool_registry
+from app.core.tools.implementations.scholar_search import ScholarSearchTool
 from icecream import ic
 from app.schemas.A2A import WriterResponse
 
@@ -34,6 +35,10 @@ class WriterAgent(Agent):  # 同样继承自Agent类
         self.is_first_run = True
         self.system_prompt = get_writer_prompt(format_output)
         self.available_images: list[str] = []
+        
+        # 注册工具
+        if self.scholar:
+            tool_registry.register(ScholarSearchTool(self.scholar))
 
     async def run(
         self,
@@ -70,9 +75,12 @@ class WriterAgent(Agent):  # 同样继承自Agent类
         await self.append_chat_history({"role": "user", "content": prompt})
 
         # 获取历史消息用于本次对话
+        # 获取注册的工具
+        tools = tool_registry.get_openai_tools()
+        
         response = await self.model.chat(
             history=self.chat_history,
-            tools=writer_tools,
+            tools=tools,
             tool_choice="auto",
             agent_name=self.__class__.__name__,
             sub_title=sub_title,
@@ -94,7 +102,8 @@ class WriterAgent(Agent):  # 同样继承自Agent类
                     SystemMessage(content=f"写作手调用{tool_call.function.name}工具"),
                 )
 
-                query = json.loads(tool_call.function.arguments)["query"]
+                args = json.loads(tool_call.function.arguments)
+                query = args.get("query")
 
                 await redis_manager.publish_message(
                     self.task_id,
@@ -107,16 +116,16 @@ class WriterAgent(Agent):  # 同样继承自Agent类
                 await self.append_chat_history(response.choices[0].message.model_dump())
                 ic(response.choices[0].message.model_dump())
 
-                try:
-                    papers = await self.scholar.search_papers(query)
-                except Exception as e:
-                    error_msg = f"搜索文献失败: {str(e)}"
-                    logger.error(error_msg)
-                    return WriterResponse(
-                        response_content=error_msg, footnotes=footnotes
-                    )
+                # 使用 ToolRegistry 执行
+                result = await tool_registry.execute_tool("search_papers", {"query": query})
+                
+                papers_str = result["content"]
+                if result["is_error"]:
+                     logger.error(f"工具执行失败: {papers_str}")
+                     # 处理错误情况，这里简单返回错误信息给LLM
+                
                 # TODO: pass to frontend
-                papers_str = self.scholar.papers_to_str(papers)
+                # papers_str = self.scholar.papers_to_str(papers)
                 logger.info(f"搜索文献结果\n{papers_str}")
                 await self.append_chat_history(
                     {
@@ -126,9 +135,14 @@ class WriterAgent(Agent):  # 同样继承自Agent类
                         "name": "search_papers",
                     }
                 )
+                
+                # 再次调用 LLM
+                # 获取注册的工具
+                tools = tool_registry.get_openai_tools()
+                
                 next_response = await self.model.chat(
                     history=self.chat_history,
-                    tools=writer_tools,
+                    tools=tools,
                     tool_choice="auto",
                     agent_name=self.__class__.__name__,
                     sub_title=sub_title,

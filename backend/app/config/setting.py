@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     CORS_ALLOW_ORIGINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = "*"
     SERVER_HOST: str = "http://localhost:8000"
     OPENALEX_EMAIL: Optional[str] = None
+    WORK_DIR: str = os.path.join(os.getcwd(), "project", "work_dir")
 
     model_config = SettingsConfigDict(
         env_file=".env.dev",

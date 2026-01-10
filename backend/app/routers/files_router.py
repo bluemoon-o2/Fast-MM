@@ -20,15 +20,23 @@ async def get_download_all_url(task_id: str):
 
 @router.get("/files")
 async def get_files(task_id: str):
-    work_dir = get_work_dir(task_id)
-    files = get_current_files(work_dir, "all")
-    file_all = []
+    try:
+        work_dir = get_work_dir(task_id)
+        files = get_current_files(work_dir, "all")
+        file_all = []
 
-    for i in files:
-        file_type = i.split(".")[-1]
-        file_all.append({"filename": i, "file_type": file_type})
+        for i in files:
+            file_type = i.split(".")[-1]
+            file_all.append({"filename": i, "file_type": file_type})
 
-    return file_all
+        return file_all
+    except FileNotFoundError:
+        # 如果目录不存在，返回空列表而不是报错
+        return []
+    except Exception as e:
+        # 其他错误记录日志并返回空列表
+        print(f"Error getting files: {e}")
+        return []
 
 
 @router.get("/open_folder")

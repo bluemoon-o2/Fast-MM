@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useTaskStore } from '@/stores/task'
 import NotebookCell from '@/components/NotebookCell.vue'
 import type { NoteCell, CodeCell, ResultCell } from '@/utils/interface'
 
 // 使用任务存储
 const taskStore = useTaskStore()
+const containerRef = ref<HTMLDivElement | null>(null)
+
 console.log('interpreterMessage:', taskStore.interpreterMessage)
 // 将代码消息转换为Notebook单元格
 const cells = computed<NoteCell[]>(() => {
@@ -36,10 +38,19 @@ const cells = computed<NoteCell[]>(() => {
 
   return notebookCells
 })
+
+// 监听cells变化，自动滚动到底部
+watch(cells, () => {
+  nextTick(() => {
+    if (containerRef.value) {
+      containerRef.value.scrollTop = containerRef.value.scrollHeight
+    }
+  })
+}, { deep: true, immediate: true })
 </script>
 
 <template>
-  <div class="flex-1 px-1 pt-1 pb-4 h-full overflow-y-auto">
+  <div ref="containerRef" class="flex-1 px-1 pt-1 pb-4 h-full overflow-y-auto">
     <!-- 遍历所有单元格 -->
     <div v-for="(cell, index) in cells" :key="index" :class="[
       'transform transition-all duration-200 hover:shadow-lg',
@@ -64,24 +75,24 @@ const cells = computed<NoteCell[]>(() => {
 <style>
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 0.375rem;
-  height: 0.375rem;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: rgb(243 244 246);
+  background-color: transparent;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgb(209 213 219);
+  background-color: rgba(156, 163, 175, 0.5);
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(156 163 175);
-  transition-property: background-color;
-  transition-duration: 200ms;
+  background-color: rgba(107, 114, 128, 0.8);
 }
 
 /* 代码高亮样式 */

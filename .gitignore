@@ -2,6 +2,7 @@
 .cursor/
 .vscode/
 .idea/
+logs/
 backend/app/.DS_Store
 *.DS_Store
 .DS_Store

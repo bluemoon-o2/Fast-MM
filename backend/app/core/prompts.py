@@ -1,6 +1,22 @@
 from app.schemas.enums import FormatOutPut
 import platform
 
+MEMORY_COMPRESSION_PROMPT = """
+你是一个专业的对话总结助手。你的任务是将当前的对话历史压缩成一份简明扼要的摘要，以便后续模型能够无缝接手任务。
+
+请务必包含以下信息：
+1. **已完成事项**：简要说明已经完成了哪些建模步骤或代码实现。
+2. **当前状态**：当前正在进行哪个环节（如：正在调试代码、正在推导公式）。
+3. **关键数据/结论**：保留重要的数值结果、公式形式或文件路径（不要丢失上下文中的关键变量）。
+4. **下一步计划**：根据当前进度，接下来的即时任务是什么。
+5. **用户约束**：用户特别强调的要求或限制条件。
+
+格式要求：
+- 使用结构化的 Markdown 列表。
+- 保持客观，不要通过“用户说”、“我说”来流水账记录，而是总结事实。
+- 篇幅控制在 300 字以内。
+"""
+
 FORMAT_QUESTIONS_PROMPT = """
 用户将提供给你一段题目信息，**请你不要更改题目信息，完整将用户输入的内容**，以 JSON 的形式输出，输出的 JSON 需遵守以下的格式：
 
@@ -350,7 +366,7 @@ Requirements:
 1. {code_template}
 2. Ensure the code is robust and handles potential errors gracefully.
 3. Save any generated figures or data files to the current working directory.
-4. Use English for variable names and comments, but you can use Chinese for plot titles or labels if appropriate.
+4. Use English for variable names and comments. If using Chinese for plot titles or labels, MUST set font properties to avoid garbled text (e.g., plt.rcParams['font.sans-serif'] = ['SimHei']).
 5. {user_prompt}
 """
 
@@ -391,7 +407,13 @@ df['\\u5a74\\u513f\\u884c\\u4e3a\\u7279\\u5f81']  # No unicode escapes
 1. Primary: Seaborn (Nature/Science style)
 2. Secondary: Matplotlib
 3. Always:
-   - Handle Chinese characters properly
+   - Handle Chinese characters properly:
+     * Explicitly set font properties in every plot code block:
+       ```python
+       import matplotlib.pyplot as plt
+       plt.rcParams['font.sans-serif'] = ['SimHei']
+       plt.rcParams['axes.unicode_minus'] = False
+       ```
    - Set semantic filenames (e.g., "feature_correlation.png")
    - Save figures to working directory
    - Include model evaluation printouts

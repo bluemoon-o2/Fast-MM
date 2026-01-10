@@ -9,7 +9,7 @@ from app.schemas.response import (
     CoordinatorMessage,
 )
 from app.services.redis_manager import redis_manager
-from litellm import acompletion
+from litellm import acompletion, completion_cost
 import litellm
 from app.schemas.enums import AgentType
 from app.utils.track import agent_metrics
@@ -78,7 +78,18 @@ class LLM:
                 if not response or not hasattr(response, "choices"):
                     raise ValueError("无效的API响应")
                 self.chat_count += 1
-                await self.send_message(response, agent_name, sub_title)
+
+                # Calculate cost and usage
+                cost = 0.0
+                usage = None
+                try:
+                    cost = completion_cost(completion_response=response)
+                    if hasattr(response, "usage"):
+                        usage = response.usage.model_dump()
+                except Exception as e:
+                    logger.warning(f"Failed to calculate cost: {e}")
+
+                await self.send_message(response, agent_name, sub_title, usage, cost)
                 return response
             except Exception as e:
                 logger.error(f"第{attempt + 1}次重试: {str(e)}")
@@ -184,13 +195,13 @@ class LLM:
 
         return fixed_history
 
-    async def send_message(self, response, agent_name, sub_title=None):
+    async def send_message(self, response, agent_name, sub_title=None, usage=None, cost=None):
         logger.info(f"subtitle是:{sub_title}")
         content = response.choices[0].message.content
 
         match agent_name:
             case AgentType.CODER:
-                agent_msg: CoderMessage = CoderMessage(content=content)
+                agent_msg: CoderMessage = CoderMessage(content=content, usage=usage, cost=cost)
             case AgentType.WRITER:
                 # 处理 Markdown 格式的图片语法
                 content, _ = split_footnotes(content)
@@ -198,13 +209,15 @@ class LLM:
                 agent_msg: WriterMessage = WriterMessage(
                     content=content,
                     sub_title=sub_title,
+                    usage=usage,
+                    cost=cost,
                 )
             case AgentType.MODELER:
-                agent_msg: ModelerMessage = ModelerMessage(content=content)
+                agent_msg: ModelerMessage = ModelerMessage(content=content, usage=usage, cost=cost)
             case AgentType.SYSTEM:
                 agent_msg: SystemMessage = SystemMessage(content=content)
             case AgentType.COORDINATOR:
-                agent_msg: CoordinatorMessage = CoordinatorMessage(content=content)
+                agent_msg: CoordinatorMessage = CoordinatorMessage(content=content, usage=usage, cost=cost)
             case _:
                 raise ValueError(f"不支持的agent类型: {agent_name}")
 

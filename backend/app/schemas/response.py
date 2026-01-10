@@ -2,6 +2,7 @@ from typing import Literal, Union
 from app.schemas.enums import AgentType
 from pydantic import BaseModel, Field
 from uuid import uuid4
+import time
 
 
 class Message(BaseModel):
@@ -10,6 +11,7 @@ class Message(BaseModel):
         "system", "agent", "user", "tool"
     ]  # system msg | agent message | user message | tool message
     content: str | None = None
+    timestamp: float = Field(default_factory=lambda: time.time())
 
 
 class ToolMessage(Message):
@@ -31,6 +33,8 @@ class UserMessage(Message):
 class AgentMessage(Message):
     msg_type: str = "agent"
     agent_type: AgentType  # CoordinatorAgent | ModelerAgent | CoderAgent | WriterAgent
+    usage: dict | None = None
+    cost: float | None = None
 
 
 class ModelerMessage(AgentMessage):

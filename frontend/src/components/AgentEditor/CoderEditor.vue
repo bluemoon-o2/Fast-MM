@@ -16,8 +16,5 @@ import NotebookArea from '@/components/NotebookArea.vue'
 </template>
 
 <style scoped>
-::-webkit-scrollbar {
-  display: none;
-  /* 或者 width: 0; height: 0; */
-}
+/* 移除隐藏滚动条的样式，使用NotebookArea中定义的全局滚动条样式 */
 </style>

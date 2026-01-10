@@ -41,6 +41,17 @@ const data = {
       ],
     },
 
+    {
+      title: '系统设置',
+      url: '#',
+      items: [
+        {
+          title: 'MCP 管理',
+          url: '/mcp',
+          isActive: false,
+        },
+      ],
+    },
   ],
 }
 
@@ -64,7 +75,7 @@ const data = {
           <SidebarMenu>
             <SidebarMenuItem v-for="childItem in item.items" :key="childItem.title">
               <SidebarMenuButton as-child :is-active="childItem.isActive">
-                <a :href="childItem.url">{{ childItem.title }}</a>
+                <router-link :to="childItem.url">{{ childItem.title }}</router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

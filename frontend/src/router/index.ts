@@ -21,6 +21,10 @@ const routes = [
 		component: () => import("@/pages/task/index.vue"),
 		props: true,
 	},
+	{
+		path: "/mcp",
+		component: () => import("@/pages/mcp/index.vue"),
+	},
 ];
 
 // 创建路由

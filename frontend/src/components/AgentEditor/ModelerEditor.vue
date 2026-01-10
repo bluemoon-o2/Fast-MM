@@ -6,10 +6,26 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 const taskStore = useTaskStore()
 
-// 获取最新的CoordinatorMessage
+// 获取最新的CoordinatorMessage（查找最后一个包含有效JSON数据的消息）
 const latestCoordinatorMessage = computed(() => {
   const messages = taskStore.coordinatorMessages
-  return messages.length > 0 ? messages[messages.length - 1] : null
+  // 反向遍历寻找包含有效数据的消息
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    if (!msg.content) continue
+    
+    try {
+      const cleanContent = msg.content.replace(/```json\n?/, '').replace(/```$/, '').trim()
+      const data = JSON.parse(cleanContent)
+      // 简单验证是否包含关键字段
+      if (data.title || data.background || data.ques_count) {
+        return msg
+      }
+    } catch (e) {
+      continue
+    }
+  }
+  return null
 })
 
 // 解析CoordinatorMessage的JSON内容
@@ -27,10 +43,26 @@ const coordinatorData = computed(() => {
   }
 })
 
-// 获取最新的ModelerMessage
+// 获取最新的ModelerMessage（查找最后一个包含有效JSON数据的消息）
 const latestModelerMessage = computed(() => {
   const messages = taskStore.modelerMessages
-  return messages.length > 0 ? messages[messages.length - 1] : null
+  // 反向遍历寻找包含有效数据的消息
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    if (!msg.content) continue
+    
+    try {
+      const cleanContent = msg.content.replace(/```json\n?/, '').replace(/```$/, '').trim()
+      const data = JSON.parse(cleanContent)
+      // 简单验证是否包含关键字段
+      if (data.eda || data.sensitivity_analysis || Object.keys(data).some(k => k.startsWith('ques'))) {
+        return msg
+      }
+    } catch (e) {
+      continue
+    }
+  }
+  return null
 })
 
 // 解析ModelerMessage的JSON内容
