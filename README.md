@@ -35,34 +35,69 @@
 
 ## 🌟 项目简介 (Project Overview)
 
-**Fast-MM** 是一个专为数学建模竞赛设计的自动化辅助系统。它能够自动完成从问题分析、模型构建、代码求解到论文写作的全流程，帮助参赛队伍高效产出高质量的竞赛作品。
+**Fast-MM** 是一个专为数学建模竞赛设计的端到端自动化辅助系统。它旨在解决数学建模竞赛中时间紧迫、任务繁重的痛点，通过自动化处理从问题分析、数学公式推导、编程求解到学术论文写作的全流程，帮助参赛队伍高效产出高质量的竞赛作品。
 
-### 核心进化 (Key Evolutions)
+### ♨️ 核心进化 (Key Evolutions)
 
 - **🚀 从线性到 DAG**: 摒弃简单的线性执行流程，引入 **DAG (有向无环图)** 进行复杂任务的依赖分析与并行编排。
 - **🔄 Actor-Critic 迭代**: 在建模 (Modeler) 和编程 (Coder) 环节引入“生成-评价-修正”闭环，显著提升模型准确性与代码一次运行成功率。
-- **🛡️ 自愈式代码执行**: 代码生成模块具备 **Self-Healing** 能力，能够根据报错信息自动 Debug 并重试。
+- **🛡️ 自愈式代码执行**: 代码生成模块具备 **Self-Healing** 能力，能够根据报错信息自动 Debug 并重试（最大重试次数可配置）。
 - **📄 结构化中间表达**: 采用标准化的数据结构在 Agent 之间传递信息，确保逻辑严密性。
 
 ## ✨ 核心功能 (Features)
 
-- **🧠 智能任务编排 (Coordinator Agent)**
-    - 深度理解赛题，自动拆解子任务。
-    - 构建 DAG 依赖图，科学规划解题路径。
-- **📐 深度迭代建模 (Modeler Agent)**
-    - 引入 Critic 角色进行模型审核。
-    - 支持公式推导与自我修正，输出高质量 Latex/Markdown 模型描述。
-- **💻 鲁棒代码执行 (Coder Agent)**
-    - **多环境支持**: 本地 Jupyter Kernel 或云端沙盒 (E2B/Daytona)。
-    - **自动纠错**: 遇到运行时错误自动分析 Traceback 并修正代码 (Max Retries: 5)。
-- **📝 自动化论文撰写 (Writer Agent)**
-    - 实时整合建模结果与图表。
-    - 生成符合学术规范的完整论文。
-- **🖥️ 现代化交互体验**
-    - 实时 WebSocket 进度推送。
-    - 可视化任务执行流。
+### 🤖 多智能体协作体系 (Multi-Agent Architecture)
 
-## 🏗️ 技术架构 (Architecture)
+| 智能体 (Agent) | 主要职能 | 关键能力 |
+| :--- | :--- | :--- |
+| **Coordinator Agent** | 任务编排 | 问题拆解、DAG 构建、依赖分析 |
+| **Modeler Agent** | 数学建模 | 问题分析、方法检索 (HMML)、Actor-Critic 迭代修正、公式推导 |
+| **Coder Agent** | 代码执行 | 多环境支持 (Jupyter/E2B/Daytona)、自愈式 Debug (Max 5 Retries)、Traceback 分析 |
+| **Writer Agent** | 论文生成 | 结果整合、学术搜索 (OpenAlex)、基于模板的写作 |
+
+### 🚀 系统核心能力
+
+- **DAG 任务编排**: 利用大模型分析任务间的输入输出依赖，构建有向无环图，支持复杂逻辑流转。
+- **自愈式代码执行**: 自动捕获运行时错误（Traceback），分析原因并重新生成代码，支持最大 5 次自动重试。
+- **灵活的 LLM 配置**: 支持为每个 Agent 独立配置不同的 LLM 模型（如 OpenAI, DeepSeek, Ollama 等），优化成本与性能。
+- **方法库集成**: 内置 **HMML (Hierarchical Mathematical Modeling Methods Library)**，支持自动检索最匹配的数学方法。
+- **多环境支持**: 代码执行层解耦，支持本地 Jupyter Kernel 或云端安全沙盒 (E2B, Daytona)。
+- **实时进度反馈**: 基于 WebSocket 的全双工通信，实时推送任务状态、中间结果和日志信息。
+
+## 🛠️ 技术栈 (Technology Stack)
+
+Fast-MM 基于现代化的技术栈构建，确保高性能与可扩展性：
+
+- **前端层 (Frontend)**:
+    - **Vue 3**: 响应式 UI 组件构建
+    - **TailwindCSS**: 现代化的原子类样式设计
+    - **WebSocket Client**: 实时双向通信处理
+
+- **后端层 (Backend)**:
+    - **FastAPI**: 高性能异步 HTTP/WebSocket 框架
+    - **Python 3.10+**: 核心运行环境
+    - **Uvicorn**: 生产级 ASGI 服务器
+
+- **基础设施 (Infrastructure)**:
+    - **Redis**: 任务队列管理 & Pub/Sub 消息总线
+    - **LiteLLM**: 统一的 LLM 接口抽象层
+    - **Jupyter Kernel**: 本地 Python 代码执行环境
+    - **(Optional) E2B / Daytona**: 云端安全代码沙盒
+
+- **数据与知识 (Data & Knowledge)**:
+    - **HMML.json**: 分层数学建模方法库
+    - **Markdown Templates**: 标准化论文结构模板
+    - **OpenAlex API**: 学术文献检索服务
+
+## 🏗️ 系统架构与流程 (Architecture & Flow)
+
+### 系统处理流程
+
+1. **任务提交 (POST /api/v1/task)**: 用户上传题目与数据，后端创建 Task 并推入 Redis 队列。
+2. **编排 (Coordinator)**: `CoordinatorAgent` 分析题目，构建任务 DAG，确定子任务执行顺序。
+3. **建模 (Modeler)**: `ModelerAgent` 根据子任务检索 HMML，生成数学模型，并通过 Actor-Critic 循环进行自我修正。
+4. **求解 (Coder)**: `CoderAgent` 接收模型定义，在沙盒环境中生成并执行代码。如遇报错，触发 Self-Healing 机制自动修复。
+5. **写作 (Writer)**: `WriterAgent` 整合所有中间结果（公式、代码、图表），调用 OpenAlex 搜索相关文献，基于模板生成最终论文。
 
 <p align="left">
     <img src="https://img.shields.io/badge/TailwindCSS-3.0+-teal?style=flat&logo=tailwindcss&logoColor=white" alt="TailwindCSS">

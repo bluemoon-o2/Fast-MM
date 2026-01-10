@@ -35,36 +35,69 @@
 
 ## 🌟 Project Overview
 
-**Fast-MM** is an automated assistance system designed specifically for mathematical modeling competitions. It automates the entire process from problem analysis and model construction to code solution and paper writing, helping teams efficiently produce high-quality competition submissions.
+**Fast-MM** is an end-to-end automated assistance system designed specifically for mathematical modeling competitions. It addresses the time-intensive and labor-intensive nature of competitions by automating the complete workflow from problem analysis, mathematical derivation, and coding solution to academic paper writing, helping teams efficiently produce high-quality submissions.
 
-It adopts modern engineering architecture (FastAPI + Vue3 + Redis + WebSocket) and deep mathematical logic (DAG task orchestration, Actor-Critic iteration mechanism), aiming to provide users with an intelligent modeling assistant that possesses both high-performance solving capabilities and an exceptional user experience.
-
-### Key Evolutions
+### ♨️ Key Evolutions
 
 - **🚀 From Linear to DAG**: Moving away from simple linear execution, we introduce **DAG (Directed Acyclic Graph)** for complex task dependency analysis and parallel orchestration.
 - **🔄 Actor-Critic Iteration**: Implementing a "Generate-Evaluate-Refine" loop in both modeling (Modeler) and coding (Coder) phases, significantly improving model accuracy and one-shot code success rates.
-- **🛡️ Self-Healing Code Execution**: The code generation module features **Self-Healing** capabilities, automatically debugging and retrying based on error messages.
+- **🛡️ Self-Healing Code Execution**: The code generation module features **Self-Healing** capabilities, automatically debugging and retrying based on error messages (configurable max retries).
 - **📄 Structured Intermediate Representation**: Using standardized data structures to pass information between agents, ensuring logical rigor throughout the process.
 
 ## ✨ Core Features
 
-- **🧠 Intelligent Task Orchestration (Coordinator Agent)**
-    - Deeply understands competition problems and automatically decomposes sub-tasks.
-    - Constructs DAG dependency graphs to scientifically plan solution paths.
-- **📐 Iterative Modeling (Modeler Agent)**
-    - Introduces a Critic role for model auditing.
-    - Supports formula derivation and self-correction, outputting high-quality LaTeX/Markdown model descriptions.
-- **💻 Robust Code Execution (Coder Agent)**
-    - **Multi-Environment Support**: Local Jupyter Kernel or Cloud Sandboxes (E2B/Daytona).
-    - **Auto-Correction**: Automatically analyzes Tracebacks and fixes code upon runtime errors (Max Retries: 5).
-- **📝 Automated Paper Writing (Writer Agent)**
-    - Real-time integration of modeling results and charts.
-    - Generates complete papers following academic standards.
-- **🖥️ Modern Interaction Experience**
-    - Real-time WebSocket progress updates.
-    - Visualized task execution flow.
+### 🤖 Multi-Agent Architecture
 
-## 🏗️ Architecture
+| Agent | Primary Function | Key Capabilities |
+| :--- | :--- | :--- |
+| **Coordinator Agent** | Task Orchestration | Problem decomposition, DAG construction, dependency analysis |
+| **Modeler Agent** | Math Modeling | Problem analysis, method retrieval (HMML), Actor-Critic refinement, formula derivation |
+| **Coder Agent** | Code Execution | Multi-environment support (Jupyter/E2B/Daytona), Self-Healing Debug (Max 5 Retries), Traceback analysis |
+| **Writer Agent** | Paper Generation | Result integration, scholarly search (OpenAlex), template-based writing |
+
+### 🚀 System Capabilities
+
+- **DAG Task Orchestration**: Uses LLMs to analyze input/output dependencies between tasks, constructing a Directed Acyclic Graph to support complex logic flows.
+- **Self-Healing Code Execution**: Automatically captures runtime errors (Tracebacks), analyzes causes, and regenerates code, supporting up to 5 automatic retries.
+- **Flexible LLM Configuration**: Supports independent LLM configuration for each Agent (e.g., OpenAI, DeepSeek, Ollama), optimizing cost and performance.
+- **Method Library Integration**: Built-in **HMML (Hierarchical Mathematical Modeling Methods Library)** supports automatic retrieval of the most matching mathematical methods.
+- **Multi-Environment Support**: Decoupled code execution layer supporting local Jupyter Kernel or cloud sandboxes (E2B, Daytona).
+- **Real-time Progress Feedback**: Full-duplex communication based on WebSocket, pushing task status, intermediate results, and logs in real-time.
+
+## 🛠️ Technology Stack
+
+Fast-MM is built on a modern technology stack to ensure high performance and scalability:
+
+- **Frontend Layer**:
+    - **Vue 3**: Reactive UI component building
+    - **TailwindCSS**: Modern atomic CSS styling
+    - **WebSocket Client**: Real-time bidirectional communication
+
+- **Backend Layer**:
+    - **FastAPI**: High-performance async HTTP/WebSocket framework
+    - **Python 3.10+**: Core runtime environment
+    - **Uvicorn**: Production-grade ASGI server
+
+- **Infrastructure**:
+    - **Redis**: Task queue management & Pub/Sub message bus
+    - **LiteLLM**: Unified LLM interface abstraction layer
+    - **Jupyter Kernel**: Local Python code execution environment
+    - **(Optional) E2B / Daytona**: Cloud secure code sandboxes
+
+- **Data & Knowledge**:
+    - **HMML.json**: Hierarchical Mathematical Modeling Methods Library
+    - **Markdown Templates**: Standardized paper structure templates
+    - **OpenAlex API**: Scholarly literature retrieval service
+
+## 🏗️ Architecture & Flow
+
+### System Processing Flow
+
+1. **Task Submission (POST /api/v1/task)**: User uploads problem and data; backend creates a Task and pushes it to the Redis queue.
+2. **Orchestration (Coordinator)**: `CoordinatorAgent` analyzes the problem, constructs a task DAG, and determines the sub-task execution order.
+3. **Modeling (Modeler)**: `ModelerAgent` retrieves HMML based on sub-tasks, generates mathematical models, and self-corrects via the Actor-Critic loop.
+4. **Solution (Coder)**: `CoderAgent` receives model definitions and generates/executes code in the sandbox environment. If errors occur, the Self-Healing mechanism triggers automatic repair.
+5. **Writing (Writer)**: `WriterAgent` integrates all intermediate results (formulas, code, charts), calls OpenAlex to search for relevant literature, and generates the final paper based on templates.
 
 <p align="left">
     <img src="https://img.shields.io/badge/TailwindCSS-3.0+-teal?style=flat&logo=tailwindcss&logoColor=white" alt="TailwindCSS">
